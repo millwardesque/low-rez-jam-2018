@@ -11,11 +11,19 @@ local v2 = {
         return v2.mk(0, 0)
     end,
     mag = function(v)
-        return sqrt(v.x ^ 2 + v.y ^ 2)
+        if v.x == 0 and v.y == 0 then
+            return 0
+        else
+            return sqrt(v.x ^ 2 + v.y ^ 2)
+        end
     end,
     norm = function(v)
         local m = v2.mag(v)
-        return v2.mk(v.x / v, v.y / mag)
+        if m == 0 then
+            return v
+        else
+            return v2.mk(v.x / m, v.y / m)
+        end
     end,
     str = function(v)
         return "("..v.x..", "..v.y..")"

@@ -27,6 +27,67 @@ local log = {
 }
 return log
 end
+package._c["v2"]=function()
+local v2 = {
+    mk = function(x, y)
+        local v = {x = x, y = y,}
+        setmetatable(v, v2.meta)
+        return v;
+    end,
+    clone = function(x, y)
+        return v2.mk(v.x, v.y)
+    end,
+    zero = function()
+        return v2.mk(0, 0)
+    end,
+    mag = function(v)
+        if v.x == 0 and v.y == 0 then
+            return 0
+        else
+            return sqrt(v.x ^ 2 + v.y ^ 2)
+        end
+    end,
+    norm = function(v)
+        local m = v2.mag(v)
+        if m == 0 then
+            return v
+        else
+            return v2.mk(v.x / m, v.y / m)
+        end
+    end,
+    str = function(v)
+        return "("..v.x..", "..v.y..")"
+    end,
+    meta = {
+        __add = function (a, b)
+            return v2.mk(a.x + b.x, a.y + b.y)
+        end,
+
+        __sub = function (a, b)
+            return v2.mk(a.x - b.x, a.y - b.y)
+        end,
+
+        __mul = function (a, b)
+            if type(a) == "number" then
+                return v2.mk(a * b.x, a * b.y)
+            elseif type(b) == "number" then
+                return v2.mk(b * a.x, b * a.y)
+            else
+                return v2.mk(a.x * b.x, a.y * b.y)
+            end
+        end,
+
+        __div = function(a, b)
+            v2.mk(a.x / b, a.y / b)
+        end,
+
+        __eq = function (a, b)
+            return a.x == b.x and a.y == b.y
+        end,
+    },
+}
+return v2
+end
 package._c["game_obj"]=function()
 local game_obj = {
     mk = function(name, pos_x, pos_y)
@@ -228,6 +289,7 @@ if (l[p]==nil) l[p]=true
 return l[p]
 end
 log = require('log')
+v2 = require('v2')
 game_obj = require('game_obj')
 game_cam = require('game_cam')
 physics = require('physics')
@@ -326,7 +388,7 @@ function render_ui()
         color(7)
         print(last_winner.name.." wins!", 17, 20)
         print("p1:"..p1_score.." vs. p2:"..p2_score, 7, 30)
-        print("press 4 or 5", 10, 40)
+        print("press 4 or 5", 9, 40)
     end
 end
 
@@ -355,37 +417,59 @@ end
 
 function _update()
     if state == "ingame" then
+        p1_vel = v2.mk(0, 0)
+        p2_vel = v2.mk(0, 0)
+
         if btn(0, 0) then
-            p1.x -= p1.speed
+            p1_vel.x -= p1.speed
         end
 
         if btn(1, 0) then
-            p1.x += p1.speed
+            p1_vel.x += p1.speed
         end
 
         if btn(2, 0) then
-            p1.y -= p1.speed
+            p1_vel.y -= p1.speed
         end
 
         if btn(3, 0) then
-            p1.y += p1.speed
+            p1_vel.y += p1.speed
         end
 
         if btn(0, 1) then
-            p2.x -= p2.speed
+            p2_vel.x -= p2.speed
         end
 
         if btn(1, 1) then
-            p2.x += p2.speed
+            p2_vel.x += p2.speed
         end
 
         if btn(2, 1) then
-            p2.y -= p2.speed
+            p2_vel.y -= p2.speed
         end
 
         if btn(3, 1) then
-            p2.y += p2.speed
+            p2_vel.y += p2.speed
         end
+
+        -- Player collision
+        if physics.check_collision(p1.x, p1.y, 8, 8, p2.x, p2.y, 8, 8) then
+            dist = v2.norm(v2.mk(p2.x, p2.y) - v2.mk(p1.x, p1.y))
+
+            if v2.mag(p1_vel) > 0 and v2.mag(p2_vel) == 0 then
+                p2_vel = dist * 2.0
+            elseif v2.mag(p1_vel) == 0 and v2.mag(p2_vel) > 0 then
+                p1_vel = dist * -2.0
+            else
+                p1_vel = dist * -2.0
+                p2_vel = dist * 2.0
+            end
+        end
+
+        p1.x += p1_vel.x
+        p1.y += p1_vel.y
+        p2.x += p2_vel.x
+        p2.y += p2_vel.y
 
         for obj in all(scene) do
             if obj.update then

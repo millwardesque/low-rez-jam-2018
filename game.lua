@@ -1,4 +1,5 @@
 log = require('log')
+v2 = require('v2')
 game_obj = require('game_obj')
 game_cam = require('game_cam')
 physics = require('physics')
@@ -126,37 +127,59 @@ end
 
 function _update()
     if state == "ingame" then
+        p1_vel = v2.mk(0, 0)
+        p2_vel = v2.mk(0, 0)
+
         if btn(0, 0) then
-            p1.x -= p1.speed
+            p1_vel.x -= p1.speed
         end
 
         if btn(1, 0) then
-            p1.x += p1.speed
+            p1_vel.x += p1.speed
         end
 
         if btn(2, 0) then
-            p1.y -= p1.speed
+            p1_vel.y -= p1.speed
         end
 
         if btn(3, 0) then
-            p1.y += p1.speed
+            p1_vel.y += p1.speed
         end
 
         if btn(0, 1) then
-            p2.x -= p2.speed
+            p2_vel.x -= p2.speed
         end
 
         if btn(1, 1) then
-            p2.x += p2.speed
+            p2_vel.x += p2.speed
         end
 
         if btn(2, 1) then
-            p2.y -= p2.speed
+            p2_vel.y -= p2.speed
         end
 
         if btn(3, 1) then
-            p2.y += p2.speed
+            p2_vel.y += p2.speed
         end
+
+        -- Player collision
+        if physics.check_collision(p1.x, p1.y, 8, 8, p2.x, p2.y, 8, 8) then
+            dist = v2.norm(v2.mk(p2.x, p2.y) - v2.mk(p1.x, p1.y))
+
+            if v2.mag(p1_vel) > 0 and v2.mag(p2_vel) == 0 then
+                p2_vel = dist * 2.0
+            elseif v2.mag(p1_vel) == 0 and v2.mag(p2_vel) > 0 then
+                p1_vel = dist * -2.0
+            else
+                p1_vel = dist * -2.0
+                p2_vel = dist * 2.0
+            end
+        end
+
+        p1.x += p1_vel.x
+        p1.y += p1_vel.y
+        p2.x += p2_vel.x
+        p2.y += p2_vel.y
 
         for obj in all(scene) do
             if obj.update then
