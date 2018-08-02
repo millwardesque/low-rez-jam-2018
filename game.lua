@@ -166,6 +166,7 @@ function _update()
         if physics.check_collision(p1.x, p1.y, 8, 8, p2.x, p2.y, 8, 8) then
             dist = v2.norm(v2.mk(p2.x, p2.y) - v2.mk(p1.x, p1.y))
 
+            -- If only one player is moving, collision stops that player and pushes the stationary one.
             if v2.mag(p1_vel) > 0 and v2.mag(p2_vel) == 0 then
                 p2_vel = dist * 2.0
             elseif v2.mag(p1_vel) == 0 and v2.mag(p2_vel) > 0 then
