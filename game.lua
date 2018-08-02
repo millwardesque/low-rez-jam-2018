@@ -91,11 +91,13 @@ function render_ui()
         end
         print("P2:"..p2_score, 64 - 1 - (5 * score_chars), 1)
     elseif state == "game over" then
-        rectfill(4, 20, 60, 44, 13)
-        rectfill(6, 22, 58, 42, 1)
+        rectfill(2, 16, 62, 48, 13)
+        rectfill(4, 18, 60, 46, 1)
 
         color(7)
-        print(last_winner.name.." wins!", 16, 29)
+        print(last_winner.name.." wins!", 17, 20)
+        print("p1:"..p1_score.." vs. p2:"..p2_score, 7, 30)
+        print("press 4 or 5", 9, 40)
     end
 end
 
@@ -182,6 +184,13 @@ function _update()
         elseif p2.has_flag and not p1.has_flag then
             if physics.check_collision(p2.x, p2.y, 8, 8, home2.x, home2.y, 8, 8) then
                 game_over(p2)
+            end
+        end
+    elseif state == "game over" then
+        for i = 4, 5 do
+            if btnp(i, 0) or btnp(i, 1) then
+                state = "ingame"
+                reset_level()
             end
         end
     end
