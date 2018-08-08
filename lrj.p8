@@ -165,11 +165,18 @@ local physics = {
 		else
 			return false
 		end
+	end,
+
+	check_collision_collidable = function(o1, o2)
+		o1_anchor = o1.col.get_anchor(o1)
+		o2_anchor = o2.col.get_anchor(o2)
+		return physics.check_collision(o1_anchor.x, o1_anchor.y, o1.col.w, o1.col.h, o2_anchor.x, o2_anchor.y, o2.col.w, o2.col.h)
 	end
 }
 return physics
 end
 package._c["player"]=function()
+collider = require('collider')
 game_obj = require('game_obj')
 renderer = require('renderer')
 v2 = require('v2')
@@ -184,6 +191,8 @@ local player = {
 	    p.has_flag = false
 	    p.renderable.draw_order = 2
 	    p.renderable.palette = palette
+
+	    collider.attach(p, 2, 5, 4, 3)
 
 	    p.update = function (self)
 		    self.vel = v2.mk(0, 0)
@@ -219,6 +228,29 @@ local player = {
 }
 
 return player
+end
+package._c["collider"]=function()
+v2 = require('v2')
+
+local collider = {
+	attach = function(game_obj, anchor_x, anchor_y, w, h)
+        local c = {
+            game_obj = game_obj,
+            anchor_x = anchor_x,
+            anchor_y = anchor_y,
+            w = w,
+            h = h
+        }
+
+        c.get_anchor = function(self)
+        	return v2.mk(self.col.game_obj.x + self.col.anchor_x, self.col.game_obj.y + self.col.anchor_y)
+        end
+
+        game_obj.col = c
+        return game_obj
+    end
+}
+return collider
 end
 package._c["renderer"]=function()
 log = require('log')
@@ -335,6 +367,7 @@ local renderer = {
 return renderer
 end
 package._c["post"]=function()
+collider = require('collider')
 game_obj = require('game_obj')
 renderer = require('renderer')
 
@@ -347,6 +380,8 @@ local post = {
 	    p.cooldown = 2 * 30
 	    p.cooldown_elapsed = 0
 	    p.is_active = false
+
+	    collider.attach(p, 2, 5, 4, 3)
 
 	    p.activate = function(self)
 	        self.renderable.palette = self.active_palette
@@ -516,8 +551,8 @@ function _update()
         end
 
         -- Player collision
-        if physics.check_collision(p1.x, p1.y, 8, 8, p2.x, p2.y, 8, 8) then
-            dist = v2.norm(v2.mk(p2.x, p2.y) - v2.mk(p1.x, p1.y))
+        if physics.check_collision_collidable(p1, p2) then
+            dist = v2.norm(p2.col.get_anchor(p2) - p1.col.get_anchor(p1))
             p1_vel = v2.mk(0, 0)
             p2_vel = v2.mk(0, 0)
 
@@ -562,15 +597,13 @@ function _update()
 
         for obj in all(scene) do
             if obj.type == 'post' then
-                if physics.check_collision(p1.x, p1.y, 8, 8, obj.x, obj.y, 8, 8) then
-                    log.syslog('Collided!')
+                if physics.check_collision_collidable(p1, obj) then
                     obj.activate(obj)
                     p1.x = 10
                     p1.y = 10
                 end
 
-                if physics.check_collision(p2.x, p2.y, 8, 8, obj.x, obj.y, 8, 8) then
-                    log.syslog('Collided2!')
+                if physics.check_collision_collidable(p2, obj) then
                     obj.activate(obj)
                     p2.x = 46
                     p2.y = 46

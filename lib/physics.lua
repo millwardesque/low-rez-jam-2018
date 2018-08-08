@@ -8,6 +8,12 @@ local physics = {
 		else
 			return false
 		end
+	end,
+
+	check_collision_collidable = function(o1, o2)
+		o1_anchor = o1.col.get_anchor(o1)
+		o2_anchor = o2.col.get_anchor(o2)
+		return physics.check_collision(o1_anchor.x, o1_anchor.y, o1.col.w, o1.col.h, o2_anchor.x, o2_anchor.y, o2.col.w, o2.col.h)
 	end
 }
 return physics

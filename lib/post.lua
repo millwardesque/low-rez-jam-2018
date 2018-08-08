@@ -1,3 +1,4 @@
+collider = require('collider')
 game_obj = require('game_obj')
 renderer = require('renderer')
 
@@ -10,6 +11,8 @@ local post = {
 	    p.cooldown = 2 * 30
 	    p.cooldown_elapsed = 0
 	    p.is_active = false
+
+	    collider.attach(p, 2, 5, 4, 3)
 
 	    p.activate = function(self)
 	        self.renderable.palette = self.active_palette

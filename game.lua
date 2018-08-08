@@ -132,8 +132,8 @@ function _update()
         end
 
         -- Player collision
-        if physics.check_collision(p1.x, p1.y, 8, 8, p2.x, p2.y, 8, 8) then
-            dist = v2.norm(v2.mk(p2.x, p2.y) - v2.mk(p1.x, p1.y))
+        if physics.check_collision_collidable(p1, p2) then
+            dist = v2.norm(p2.col.get_anchor(p2) - p1.col.get_anchor(p1))
             p1_vel = v2.mk(0, 0)
             p2_vel = v2.mk(0, 0)
 
@@ -178,15 +178,13 @@ function _update()
 
         for obj in all(scene) do
             if obj.type == 'post' then
-                if physics.check_collision(p1.x, p1.y, 8, 8, obj.x, obj.y, 8, 8) then
-                    log.syslog('Collided!')
+                if physics.check_collision_collidable(p1, obj) then
                     obj.activate(obj)
                     p1.x = 10
                     p1.y = 10
                 end
 
-                if physics.check_collision(p2.x, p2.y, 8, 8, obj.x, obj.y, 8, 8) then
-                    log.syslog('Collided2!')
+                if physics.check_collision_collidable(p2, obj) then
                     obj.activate(obj)
                     p2.x = 46
                     p2.y = 46

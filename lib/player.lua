@@ -1,3 +1,4 @@
+collider = require('collider')
 game_obj = require('game_obj')
 renderer = require('renderer')
 v2 = require('v2')
@@ -12,6 +13,8 @@ local player = {
 	    p.has_flag = false
 	    p.renderable.draw_order = 2
 	    p.renderable.palette = palette
+
+	    collider.attach(p, 2, 5, 4, 3)
 
 	    p.update = function (self)
 		    self.vel = v2.mk(0, 0)
