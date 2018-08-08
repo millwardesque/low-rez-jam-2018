@@ -2,7 +2,7 @@ game_obj = require('game_obj')
 
 local game_cam = {
     mk = function(name, pos_x, pos_y, width, height, bounds_x, bounds_y)
-        local c = game_obj.mk(name, pos_x, pos_y)
+        local c = game_obj.mk(name, 'camera', pos_x, pos_y)
         c.cam = {
             w = width,
             h = height,

@@ -3,6 +3,8 @@ v2 = require('v2')
 game_obj = require('game_obj')
 game_cam = require('game_cam')
 physics = require('physics')
+player = require('player')
+post = require('post')
 renderer = require('renderer')
 
 scene = {}
@@ -30,49 +32,44 @@ function reset_level()
         cam = game_cam.mk("main-cam", 0, 0, screen_dim, screen_dim, 16, 16)
         add(scene, cam)
 
+        -- Player 1 stuff
         p1_home_x = 10
         p1_home_y = 10
+        p1 = player.mk('p1', 0, p1_home_x + 8, p1_home_y + 8, nil)
+        add(scene, p1)
 
-        p1 = game_obj.mk('p1', p1_home_x + 8, p1_home_y + 8)
-        renderer.attach(p1, 1)
-        p1.speed = 1
-        p1.has_flag = false
-        p1.renderable.draw_order = 2
-
-        flag1 = game_obj.mk('flag1', p1_home_x + 3, p1_home_y - 3)
+        flag1 = game_obj.mk('flag1', 'flag', p1_home_x + 3, p1_home_y - 3)
         renderer.attach(flag1, 16)
         flag1.renderable.draw_order = 1
+        add(scene, flag1)
 
-        home1 = game_obj.mk('home1', p1_home_x, p1_home_y)
+        home1 = game_obj.mk('home1', 'home', p1_home_x, p1_home_y)
         renderer.attach(home1, 80)
+        add(scene, home1)
 
+        -- Player 2 stuff
         p2_home_x = 46
         p2_home_y = 46
         p2_palette = {0, 1, 4, 3, 2, 5, 6, 7, 9, 8, 14, 11, 12, 13, 10, 15}
 
-        p2 = game_obj.mk('p2', p2_home_x - 8, p2_home_y - 8)
-        renderer.attach(p2, 1)
-        p2.speed = 1
-        p2.has_flag = false
-        p2.renderable.draw_order = 2
-        p2.renderable.palette = p2_palette
+        p2 = player.mk('p2', 1, p2_home_x - 8, p2_home_y - 8, p2_palette)
+        add(scene, p2)
 
-        flag2 = game_obj.mk('flag2', p2_home_x + 3, p2_home_y - 3)
+        flag2 = game_obj.mk('flag2', 'flag', p2_home_x + 3, p2_home_y - 3)
         renderer.attach(flag2, 16)
         flag2.renderable.palette = p2_palette
         flag2.renderable.draw_order = 1
+        add(scene, flag2)
 
-        home2 = game_obj.mk('home2', p2_home_x, p2_home_y)
+        home2 = game_obj.mk('home2', 'home', p2_home_x, p2_home_y)
         renderer.attach(home2, 80)
         home2.renderable.palette = p2_palette
-
-        add(scene, p1)
-        add(scene, flag1)
-        add(scene, home1)
-
-        add(scene, p2)
-        add(scene, flag2)
         add(scene, home2)
+
+        -- Electric posts
+        add(scene, post.mk('post1', 28, 28))
+        add(scene, post.mk('post2', 42, 20))
+        add(scene, post.mk('post3', 14, 42))
     elseif state == "game over" then
         scene = {}
         cam = game_cam.mk("main-cam", 0, 0, screen_dim, screen_dim, 16, 16)
@@ -127,44 +124,18 @@ end
 
 function _update()
     if state == "ingame" then
-        p1_vel = v2.mk(0, 0)
-        p2_vel = v2.mk(0, 0)
 
-        if btn(0, 0) then
-            p1_vel.x -= p1.speed
-        end
-
-        if btn(1, 0) then
-            p1_vel.x += p1.speed
-        end
-
-        if btn(2, 0) then
-            p1_vel.y -= p1.speed
-        end
-
-        if btn(3, 0) then
-            p1_vel.y += p1.speed
-        end
-
-        if btn(0, 1) then
-            p2_vel.x -= p2.speed
-        end
-
-        if btn(1, 1) then
-            p2_vel.x += p2.speed
-        end
-
-        if btn(2, 1) then
-            p2_vel.y -= p2.speed
-        end
-
-        if btn(3, 1) then
-            p2_vel.y += p2.speed
+        for obj in all(scene) do
+            if obj.update then
+                obj.update(obj)
+            end
         end
 
         -- Player collision
         if physics.check_collision(p1.x, p1.y, 8, 8, p2.x, p2.y, 8, 8) then
             dist = v2.norm(v2.mk(p2.x, p2.y) - v2.mk(p1.x, p1.y))
+            p1_vel = v2.mk(0, 0)
+            p2_vel = v2.mk(0, 0)
 
             -- If only one player is moving, collision stops that player and pushes the stationary one.
             if v2.mag(p1_vel) > 0 and v2.mag(p2_vel) == 0 then
@@ -175,17 +146,11 @@ function _update()
                 p1_vel = dist * -2.0
                 p2_vel = dist * 2.0
             end
-        end
 
-        p1.x += p1_vel.x
-        p1.y += p1_vel.y
-        p2.x += p2_vel.x
-        p2.y += p2_vel.y
-
-        for obj in all(scene) do
-            if obj.update then
-                obj.update(obj)
-            end
+            p1.x += p1_vel.x
+            p1.y += p1_vel.y
+            p2.x += p2_vel.x
+            p2.y += p2_vel.y
         end
 
         -- Enemy flag capture
@@ -210,6 +175,25 @@ function _update()
                 game_over(p2)
             end
         end
+
+        for obj in all(scene) do
+            if obj.type == 'post' then
+                if physics.check_collision(p1.x, p1.y, 8, 8, obj.x, obj.y, 8, 8) then
+                    log.syslog('Collided!')
+                    obj.activate(obj)
+                    p1.x = 10
+                    p1.y = 10
+                end
+
+                if physics.check_collision(p2.x, p2.y, 8, 8, obj.x, obj.y, 8, 8) then
+                    log.syslog('Collided2!')
+                    obj.activate(obj)
+                    p2.x = 46
+                    p2.y = 46
+                end
+            end
+        end
+
     elseif state == "game over" then
         for i = 4, 5 do
             if btnp(i, 0) or btnp(i, 1) then

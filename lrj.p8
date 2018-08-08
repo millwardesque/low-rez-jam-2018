@@ -90,13 +90,14 @@ return v2
 end
 package._c["game_obj"]=function()
 local game_obj = {
-    mk = function(name, pos_x, pos_y)
+    mk = function(name, type, pos_x, pos_y)
         local g = {
             name = name,
+            type = type,
             x = pos_x,
             y = pos_y,
         }
-        g.update = function()
+        g.update = function(self)
         end
 
         return g
@@ -109,7 +110,7 @@ game_obj = require('game_obj')
 
 local game_cam = {
     mk = function(name, pos_x, pos_y, width, height, bounds_x, bounds_y)
-        local c = game_obj.mk(name, pos_x, pos_y)
+        local c = game_obj.mk(name, 'camera', pos_x, pos_y)
         c.cam = {
             w = width,
             h = height,
@@ -167,6 +168,57 @@ local physics = {
 	end
 }
 return physics
+end
+package._c["player"]=function()
+game_obj = require('game_obj')
+renderer = require('renderer')
+v2 = require('v2')
+
+local player = {
+	mk = function(name, controller, x, y, palette)
+	    local p = game_obj.mk(name, 'player', x, y)
+	    renderer.attach(p, 1)
+	    p.controller = controller
+	    p.vel = v2.mk(0, 0)
+	    p.speed = 1
+	    p.has_flag = false
+	    p.renderable.draw_order = 2
+	    p.renderable.palette = palette
+
+	    p.update = function (self)
+		    self.vel = v2.mk(0, 0)
+
+		    if btn(0, self.controller) then
+		        self.vel.x -= self.speed
+		    end
+
+		    if btn(1, self.controller) then
+		        self.vel.x += self.speed
+		    end
+
+		    if btn(2, self.controller) then
+		        self.vel.y -= self.speed
+		    end
+
+		    if btn(3, self.controller) then
+		        self.vel.y += self.speed
+		    end
+
+		    self.x += self.vel.x
+		    self.y += self.vel.y
+
+		    if self.vel.x < 0 then
+		        self.renderable.flip_x = true
+		    elseif self.vel.x > 0 then
+		        self.renderable.flip_x = false
+		    end
+		end
+
+	    return p
+	end
+}
+
+return player
 end
 package._c["renderer"]=function()
 log = require('log')
@@ -282,6 +334,48 @@ local renderer = {
 }
 return renderer
 end
+package._c["post"]=function()
+game_obj = require('game_obj')
+renderer = require('renderer')
+
+local post = {
+	mk = function(name, x, y)
+	    local p = game_obj.mk(name, 'post', x, y)
+	    renderer.attach(p, 32)
+	    p.renderable.draw_order = 2
+	    p.active_palette = {0, 12, 2, 3, 4, 5, 6, 7, 8, 10, 9, 11, 1, 13, 14, 15}
+	    p.cooldown = 2 * 30
+	    p.cooldown_elapsed = 0
+	    p.is_active = false
+
+	    p.activate = function(self)
+	        self.renderable.palette = self.active_palette
+	        self.is_active = true
+	        p.cooldown_elapsed = 0
+	    end
+
+	    p.deactivate = function(self)
+	        self.renderable.palette = nil
+	        self.is_active = false
+	        self.cooldown_elapsed = 0
+	    end
+
+	    p.update = function(self)
+	        if self.is_active then
+	            if self.cooldown_elapsed >= self.cooldown then
+	                self.deactivate(self)
+	            else
+	                self.cooldown_elapsed += 1
+	            end
+	        end
+	    end
+
+	    return p
+	end
+}
+
+return post
+end
 function require(p)
 local l=package.loaded
 if (l[p]==nil) l[p]=package._c[p]()
@@ -293,6 +387,8 @@ v2 = require('v2')
 game_obj = require('game_obj')
 game_cam = require('game_cam')
 physics = require('physics')
+player = require('player')
+post = require('post')
 renderer = require('renderer')
 
 scene = {}
@@ -320,49 +416,44 @@ function reset_level()
         cam = game_cam.mk("main-cam", 0, 0, screen_dim, screen_dim, 16, 16)
         add(scene, cam)
 
+        -- Player 1 stuff
         p1_home_x = 10
         p1_home_y = 10
+        p1 = player.mk('p1', 0, p1_home_x + 8, p1_home_y + 8, nil)
+        add(scene, p1)
 
-        p1 = game_obj.mk('p1', p1_home_x + 8, p1_home_y + 8)
-        renderer.attach(p1, 1)
-        p1.speed = 1
-        p1.has_flag = false
-        p1.renderable.draw_order = 2
-
-        flag1 = game_obj.mk('flag1', p1_home_x + 3, p1_home_y - 3)
+        flag1 = game_obj.mk('flag1', 'flag', p1_home_x + 3, p1_home_y - 3)
         renderer.attach(flag1, 16)
         flag1.renderable.draw_order = 1
+        add(scene, flag1)
 
-        home1 = game_obj.mk('home1', p1_home_x, p1_home_y)
+        home1 = game_obj.mk('home1', 'home', p1_home_x, p1_home_y)
         renderer.attach(home1, 80)
+        add(scene, home1)
 
+        -- Player 2 stuff
         p2_home_x = 46
         p2_home_y = 46
         p2_palette = {0, 1, 4, 3, 2, 5, 6, 7, 9, 8, 14, 11, 12, 13, 10, 15}
 
-        p2 = game_obj.mk('p2', p2_home_x - 8, p2_home_y - 8)
-        renderer.attach(p2, 1)
-        p2.speed = 1
-        p2.has_flag = false
-        p2.renderable.draw_order = 2
-        p2.renderable.palette = p2_palette
+        p2 = player.mk('p2', 1, p2_home_x - 8, p2_home_y - 8, p2_palette)
+        add(scene, p2)
 
-        flag2 = game_obj.mk('flag2', p2_home_x + 3, p2_home_y - 3)
+        flag2 = game_obj.mk('flag2', 'flag', p2_home_x + 3, p2_home_y - 3)
         renderer.attach(flag2, 16)
         flag2.renderable.palette = p2_palette
         flag2.renderable.draw_order = 1
+        add(scene, flag2)
 
-        home2 = game_obj.mk('home2', p2_home_x, p2_home_y)
+        home2 = game_obj.mk('home2', 'home', p2_home_x, p2_home_y)
         renderer.attach(home2, 80)
         home2.renderable.palette = p2_palette
-
-        add(scene, p1)
-        add(scene, flag1)
-        add(scene, home1)
-
-        add(scene, p2)
-        add(scene, flag2)
         add(scene, home2)
+
+        -- Electric posts
+        add(scene, post.mk('post1', 28, 28))
+        add(scene, post.mk('post2', 42, 20))
+        add(scene, post.mk('post3', 14, 42))
     elseif state == "game over" then
         scene = {}
         cam = game_cam.mk("main-cam", 0, 0, screen_dim, screen_dim, 16, 16)
@@ -417,45 +508,20 @@ end
 
 function _update()
     if state == "ingame" then
-        p1_vel = v2.mk(0, 0)
-        p2_vel = v2.mk(0, 0)
 
-        if btn(0, 0) then
-            p1_vel.x -= p1.speed
-        end
-
-        if btn(1, 0) then
-            p1_vel.x += p1.speed
-        end
-
-        if btn(2, 0) then
-            p1_vel.y -= p1.speed
-        end
-
-        if btn(3, 0) then
-            p1_vel.y += p1.speed
-        end
-
-        if btn(0, 1) then
-            p2_vel.x -= p2.speed
-        end
-
-        if btn(1, 1) then
-            p2_vel.x += p2.speed
-        end
-
-        if btn(2, 1) then
-            p2_vel.y -= p2.speed
-        end
-
-        if btn(3, 1) then
-            p2_vel.y += p2.speed
+        for obj in all(scene) do
+            if obj.update then
+                obj.update(obj)
+            end
         end
 
         -- Player collision
         if physics.check_collision(p1.x, p1.y, 8, 8, p2.x, p2.y, 8, 8) then
             dist = v2.norm(v2.mk(p2.x, p2.y) - v2.mk(p1.x, p1.y))
+            p1_vel = v2.mk(0, 0)
+            p2_vel = v2.mk(0, 0)
 
+            -- If only one player is moving, collision stops that player and pushes the stationary one.
             if v2.mag(p1_vel) > 0 and v2.mag(p2_vel) == 0 then
                 p2_vel = dist * 2.0
             elseif v2.mag(p1_vel) == 0 and v2.mag(p2_vel) > 0 then
@@ -464,17 +530,11 @@ function _update()
                 p1_vel = dist * -2.0
                 p2_vel = dist * 2.0
             end
-        end
 
-        p1.x += p1_vel.x
-        p1.y += p1_vel.y
-        p2.x += p2_vel.x
-        p2.y += p2_vel.y
-
-        for obj in all(scene) do
-            if obj.update then
-                obj.update(obj)
-            end
+            p1.x += p1_vel.x
+            p1.y += p1_vel.y
+            p2.x += p2_vel.x
+            p2.y += p2_vel.y
         end
 
         -- Enemy flag capture
@@ -499,6 +559,25 @@ function _update()
                 game_over(p2)
             end
         end
+
+        for obj in all(scene) do
+            if obj.type == 'post' then
+                if physics.check_collision(p1.x, p1.y, 8, 8, obj.x, obj.y, 8, 8) then
+                    log.syslog('Collided!')
+                    obj.activate(obj)
+                    p1.x = 10
+                    p1.y = 10
+                end
+
+                if physics.check_collision(p2.x, p2.y, 8, 8, obj.x, obj.y, 8, 8) then
+                    log.syslog('Collided2!')
+                    obj.activate(obj)
+                    p2.x = 46
+                    p2.y = 46
+                end
+            end
+        end
+
     elseif state == "game over" then
         for i = 4, 5 do
             if btnp(i, 0) or btnp(i, 1) then
@@ -536,14 +615,14 @@ __gfx__
 99990000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 55000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 55000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00011000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00911100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00199100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00111900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00111100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00911100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00199100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00111900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
