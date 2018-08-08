@@ -175,59 +175,28 @@ local physics = {
 }
 return physics
 end
-package._c["player"]=function()
+package._c["flag"]=function()
 collider = require('collider')
 game_obj = require('game_obj')
 renderer = require('renderer')
-v2 = require('v2')
 
-local player = {
-	mk = function(name, controller, x, y, palette)
-	    local p = game_obj.mk(name, 'player', x, y)
-	    renderer.attach(p, 1)
-	    p.controller = controller
-	    p.vel = v2.mk(0, 0)
-	    p.speed = 1
-	    p.has_flag = false
-	    p.renderable.draw_order = 2
-	    p.renderable.palette = palette
+local flag = {
+	mk = function(name, x, y, palette)
+	    local f = game_obj.mk(name, 'flag', x, y)
+        renderer.attach(f, 16)
+        f.renderable.draw_order = 1
 
-	    collider.attach(p, 2, 5, 4, 3)
+        if palette ~= nil then
+        	f.renderable.palette = palette
+        end
 
-	    p.update = function (self)
-		    self.vel = v2.mk(0, 0)
+	    collider.attach(f, 0, 0, 8, 8)
 
-		    if btn(0, self.controller) then
-		        self.vel.x -= self.speed
-		    end
-
-		    if btn(1, self.controller) then
-		        self.vel.x += self.speed
-		    end
-
-		    if btn(2, self.controller) then
-		        self.vel.y -= self.speed
-		    end
-
-		    if btn(3, self.controller) then
-		        self.vel.y += self.speed
-		    end
-
-		    self.x += self.vel.x
-		    self.y += self.vel.y
-
-		    if self.vel.x < 0 then
-		        self.renderable.flip_x = true
-		    elseif self.vel.x > 0 then
-		        self.renderable.flip_x = false
-		    end
-		end
-
-	    return p
+	    return f
 	end
 }
 
-return player
+return flag
 end
 package._c["collider"]=function()
 v2 = require('v2')
@@ -366,6 +335,83 @@ local renderer = {
 }
 return renderer
 end
+package._c["home"]=function()
+collider = require('collider')
+game_obj = require('game_obj')
+renderer = require('renderer')
+
+local home = {
+	mk = function(name, x, y, palette)
+	    local h = game_obj.mk(name, 'home', x, y)
+        renderer.attach(h, 80)
+        h.renderable.draw_order = 0
+
+        if palette ~= nil then
+        	h.renderable.palette = palette
+        end
+
+	    collider.attach(h, 0, 0, 8, 8)
+
+	    return h
+	end
+}
+
+return home
+end
+package._c["player"]=function()
+collider = require('collider')
+game_obj = require('game_obj')
+renderer = require('renderer')
+v2 = require('v2')
+
+local player = {
+	mk = function(name, controller, x, y, palette)
+	    local p = game_obj.mk(name, 'player', x, y)
+	    renderer.attach(p, 1)
+	    p.controller = controller
+	    p.vel = v2.mk(0, 0)
+	    p.speed = 1
+	    p.has_flag = false
+	    p.renderable.draw_order = 2
+	    p.renderable.palette = palette
+
+	    collider.attach(p, 2, 5, 4, 3)
+
+	    p.update = function (self)
+		    self.vel = v2.mk(0, 0)
+
+		    if btn(0, self.controller) then
+		        self.vel.x -= self.speed
+		    end
+
+		    if btn(1, self.controller) then
+		        self.vel.x += self.speed
+		    end
+
+		    if btn(2, self.controller) then
+		        self.vel.y -= self.speed
+		    end
+
+		    if btn(3, self.controller) then
+		        self.vel.y += self.speed
+		    end
+
+		    self.x += self.vel.x
+		    self.y += self.vel.y
+
+		    if self.vel.x < 0 then
+		        self.renderable.flip_x = true
+		    elseif self.vel.x > 0 then
+		        self.renderable.flip_x = false
+		    end
+		end
+
+	    return p
+	end
+}
+
+return player
+end
 package._c["post"]=function()
 collider = require('collider')
 game_obj = require('game_obj')
@@ -422,6 +468,8 @@ v2 = require('v2')
 game_obj = require('game_obj')
 game_cam = require('game_cam')
 physics = require('physics')
+flag = require('flag')
+home = require('home')
 player = require('player')
 post = require('post')
 renderer = require('renderer')
@@ -457,13 +505,10 @@ function reset_level()
         p1 = player.mk('p1', 0, p1_home_x + 8, p1_home_y + 8, nil)
         add(scene, p1)
 
-        flag1 = game_obj.mk('flag1', 'flag', p1_home_x + 3, p1_home_y - 3)
-        renderer.attach(flag1, 16)
-        flag1.renderable.draw_order = 1
+        flag1 = flag.mk('flag1', p1_home_x + 3, p1_home_y - 3)
         add(scene, flag1)
 
-        home1 = game_obj.mk('home1', 'home', p1_home_x, p1_home_y)
-        renderer.attach(home1, 80)
+        home1 = home.mk('home1', p1_home_x, p1_home_y)
         add(scene, home1)
 
         -- Player 2 stuff
@@ -474,15 +519,10 @@ function reset_level()
         p2 = player.mk('p2', 1, p2_home_x - 8, p2_home_y - 8, p2_palette)
         add(scene, p2)
 
-        flag2 = game_obj.mk('flag2', 'flag', p2_home_x + 3, p2_home_y - 3)
-        renderer.attach(flag2, 16)
-        flag2.renderable.palette = p2_palette
-        flag2.renderable.draw_order = 1
+        flag2 = flag.mk('flag2', p2_home_x + 3, p2_home_y - 3, p2_palette)
         add(scene, flag2)
 
-        home2 = game_obj.mk('home2', 'home', p2_home_x, p2_home_y)
-        renderer.attach(home2, 80)
-        home2.renderable.palette = p2_palette
+        home2 = home.mk('home2', p2_home_x, p2_home_y, p2_palette)
         add(scene, home2)
 
         -- Electric posts
@@ -574,23 +614,23 @@ function _update()
 
         -- Enemy flag capture
         if p1.has_flag == false then
-            if physics.check_collision(p1.x, p1.y, 8, 8, flag2.x, flag2.y, 8, 8) then
+            if physics.check_collision_collidable(p1, flag2) then
                 p1.has_flag = true
                 flag2.renderable.enabled = false
             end
         elseif p1.has_flag and not p2.has_flag then
-            if physics.check_collision(p1.x, p1.y, 8, 8, home1.x, home1.y, 8, 8) then
+            if physics.check_collision_collidable(p1, home1) then
                 game_over(p1)
             end
         end
 
         if p2.has_flag == false then
-            if physics.check_collision(p2.x, p2.y, 8, 8, flag1.x, flag1.y, 8, 8) then
+            if physics.check_collision_collidable(p2, flag1) then
                 p2.has_flag = true
                 flag1.renderable.enabled = false
             end
         elseif p2.has_flag and not p1.has_flag then
-            if physics.check_collision(p2.x, p2.y, 8, 8, home2.x, home2.y, 8, 8) then
+            if physics.check_collision_collidable(p2, home2) then
                 game_over(p2)
             end
         end
