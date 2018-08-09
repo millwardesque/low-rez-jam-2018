@@ -18,6 +18,7 @@ local post = {
 	        self.renderable.palette = self.active_palette
 	        self.is_active = true
 	        p.cooldown_elapsed = 0
+	        sfx(2)
 	    end
 
 	    p.deactivate = function(self)

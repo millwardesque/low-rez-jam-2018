@@ -165,6 +165,8 @@ function _update()
             p1.y += p1_vel.y
             p2.x += p2_vel.x
             p2.y += p2_vel.y
+
+            sfx(3)
         end
 
         -- Enemy flag capture
