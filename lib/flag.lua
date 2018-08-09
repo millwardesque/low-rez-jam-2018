@@ -19,12 +19,14 @@ local flag = {
 
 	    f.pickup_flag = function(self)
 	    	self.renderable.enabled = false
+	    	sfx(0)
 		end
 
 	    f.reset_flag = function(self)
 	    	self.x = self.start_x
 	    	self.y = self.start_y
 	    	self.renderable.enabled = true
+	    	sfx(1)
     	end
 
 	    return f

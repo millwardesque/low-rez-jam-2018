@@ -48,8 +48,8 @@ function reset_level()
         add(scene, flag1)
 
         -- Player 2 stuff
-        p2_home_x = 46
-        p2_home_y = 46
+        p2_home_x = 64 - p1_home_x - 8
+        p2_home_y = 64 - p1_home_x - 8
         p2_palette = {0, 1, 4, 3, 2, 5, 6, 7, 9, 8, 14, 11, 12, 13, 10, 15}
 
         home2 = home.mk('home2', p2_home_x, p2_home_y, p2_palette)
@@ -62,9 +62,12 @@ function reset_level()
         add(scene, flag2)
 
         -- Electric posts
-        add(scene, post.mk('post1', 28, 28))
-        add(scene, post.mk('post2', 42, 20))
-        add(scene, post.mk('post3', 14, 42))
+        mid_field_x = (64 / 2) - (8 / 2)
+        mid_field_y = (64 / 2) - (8 / 2)
+        post_distance = 20
+        add(scene, post.mk('post1', mid_field_x, mid_field_y))
+        add(scene, post.mk('post2', mid_field_x + post_distance, mid_field_y - post_distance))
+        add(scene, post.mk('post3', mid_field_x - post_distance, mid_field_y + post_distance))
     elseif state == "game over" then
         scene = {}
         cam = game_cam.mk("main-cam", 0, 0, screen_dim, screen_dim, 16, 16)
