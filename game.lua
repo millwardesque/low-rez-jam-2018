@@ -73,7 +73,7 @@ function reset_level()
 end
 
 function render_ui()
-    if state == "ingame" then
+    if false and state == "ingame" then
         rectfill(0, 0, 64, 7, 0)
         color(7)
         print("P1:"..p1_score, 1, 1)
@@ -123,6 +123,22 @@ function _update()
         for obj in all(scene) do
             if obj.update then
                 obj.update(obj)
+            end
+        end
+
+        -- Boundary collision
+        for p in all({p1, p2}) do
+            while physics.check_collision_collidable_with_box(p, 0, 0, 64, 1) do
+                p.y += 1
+            end
+            while physics.check_collision_collidable_with_box(p, 0, 64, 64, 1) do
+                p.y -= 1
+            end
+            while physics.check_collision_collidable_with_box(p, 0, 0, 1, 64) do
+                p.x += 1
+            end
+            while physics.check_collision_collidable_with_box(p, 64, 0, 1, 64) do
+                p.x -= 1
             end
         end
 

@@ -14,7 +14,7 @@ local player = {
 	    p.renderable.draw_order = 2
 	    p.renderable.palette = palette
 
-	    collider.attach(p, 2, 5, 4, 3)
+	    collider.attach(p, 2, 6, 4, 2)
 
 	    p.pickup_flag = function(self, flag)
 	    	self.has_flag = true

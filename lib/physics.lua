@@ -14,6 +14,11 @@ local physics = {
 		o1_anchor = o1.col.get_anchor(o1)
 		o2_anchor = o2.col.get_anchor(o2)
 		return physics.check_collision(o1_anchor.x, o1_anchor.y, o1.col.w, o1.col.h, o2_anchor.x, o2_anchor.y, o2.col.w, o2.col.h)
-	end
+	end,
+
+	check_collision_collidable_with_box = function(o1, o2_x, o2_y, o2_w, o2_h)
+		o1_anchor = o1.col.get_anchor(o1)
+		return physics.check_collision(o1_anchor.x, o1_anchor.y, o1.col.w, o1.col.h, o2_x, o2_y, o2_w, o2_h)
+	end,
 }
 return physics
