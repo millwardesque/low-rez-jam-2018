@@ -148,14 +148,22 @@ function _update()
         -- Player collision
         if physics.check_collision_collidable(p1, p2) then
             dist = v2.norm(p2.col.get_anchor(p2) - p1.col.get_anchor(p1))
-            p1_vel = v2.mk(0, 0)
-            p2_vel = v2.mk(0, 0)
+            p1_vel = p1.vel
+            p2_vel = p2.vel
 
-            -- If only one player is moving, collision stops that player and pushes the stationary one.
+            -- If only one player is moving, collision only pushes that player.
             if v2.mag(p1_vel) > 0 and v2.mag(p2_vel) == 0 then
-                p2_vel = dist * 2.0
+                p1_vel = dist * -4.0
+
+                if p1.has_flag then
+                    p1.drop_flag(p1)
+                end
             elseif v2.mag(p1_vel) == 0 and v2.mag(p2_vel) > 0 then
-                p1_vel = dist * -2.0
+                p2_vel = dist * 4.0
+
+                if p2.has_flag then
+                    p2.drop_flag(p2)
+                end
             else
                 p1_vel = dist * -2.0
                 p2_vel = dist * 2.0
