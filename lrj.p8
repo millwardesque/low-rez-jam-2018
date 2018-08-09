@@ -379,6 +379,7 @@ local home = {
 return home
 end
 package._c["player"]=function()
+anim_spr = require('anim_spr')
 collider = require('collider')
 game_obj = require('game_obj')
 renderer = require('renderer')
@@ -394,6 +395,16 @@ local player = {
 	    p.has_flag = false
 	    p.renderable.draw_order = 2
 	    p.renderable.palette = palette
+
+	    -- Animations
+		local anims = {
+			idle = { 1, },
+			walk = { 1, 2 },
+			flag_idle = { 3 },
+			flag_walk = { 3, 4 },
+		}
+
+		anim_spr.attach(p, 4, anims, "idle", 0)
 
 	    collider.attach(p, 2, 6, 4, 2)
 
@@ -440,6 +451,22 @@ local player = {
 		    elseif self.vel.x > 0 then
 		        self.renderable.flip_x = false
 		    end
+
+		    if self.vel.x != 0 then
+		    	if self.has_flag then
+		        	anim_spr.set_anim(self.anim, 'flag_walk')
+		        else
+		        	anim_spr.set_anim(self.anim, 'walk')
+		        end
+		    else
+		    	if self.has_flag then
+		        	anim_spr.set_anim(self.anim, 'flag_idle')
+		        else
+		        	anim_spr.set_anim(self.anim, 'idle')
+		        end
+		    end
+
+		    anim_spr.update(self.anim)
 		end
 
 	    return p
@@ -447,6 +474,62 @@ local player = {
 }
 
 return player
+end
+package._c["anim_spr"]=function()
+local anim_spr = {
+	attach = function(game_obj, frames_per_cell, animations, start_anim, start_frame_offset)
+		game_obj.anim = {
+			game_obj = game_obj,
+			current_animation = start_anim,
+			current_cell = 1,
+			frames_per_cell = frames_per_cell,
+			current_frame = 1 + start_frame_offset,
+			animations = animations,
+			loop = true,
+		}
+
+		return game_obj
+	end,
+
+	update = function(anim)
+		anim.current_frame += 1
+		if (anim.current_frame > anim.frames_per_cell) then
+			anim.current_frame = 1
+
+			if (anim.current_animation != nil and anim.current_cell != nil) then
+				anim.current_cell += 1
+				if (anim.current_cell > #anim.animations[anim.current_animation]) then
+					if anim.loop then
+						anim.current_cell = 1
+					else
+						anim.current_cell = #anim.animations[anim.current_animation]
+					end
+				end
+			end
+		end
+
+		if (anim.game_obj.renderable and anim.current_animation != nil and anim.current_cell != nil) then
+			anim.game_obj.renderable.sprite = anim.animations[anim.current_animation][anim.current_cell]
+		elseif (anim.game_obj.renderable) then
+			anim.game_obj.renderable.sprite = nil
+		end
+	end,
+
+	set_anim = function(anim, animation)
+		if anim.current_animation != animation then
+			anim.current_frame = 0
+			anim.current_cell = 1
+			anim.current_animation = animation
+		end
+	end,
+
+	is_player = function(anim)
+		return anim.current_animation != nil and anim.current_cell ~= nil and
+		   (anim.loop or (not anim.loop and anim.current_cell < #anim.animations[anim.current_animation]))
+	end
+}
+
+return anim_spr
 end
 package._c["post"]=function()
 collider = require('collider')
@@ -731,14 +814,14 @@ function _draw()
     log.render()
 end
 __gfx__
-0000000000ffff0000ffff0000999990000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000000ffffff00ffffff009999ff9000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-007007000ffffcf00ffffcf0099ff7f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000770000ffffff00ffffff009fffff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00077000009499000094990000949900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-007007000094990000994f0000949900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000000009f900000999000009f900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000010c00000c010000010c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000ffff0000ffff0000999990009999900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000000ffffff00ffffff009999ff909999ff90000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+007007000ffffcf00ffffcf0099ff7f0099ff7f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000770000ffffff00ffffff009fffff009fffff00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00077000009499000094990000949900009499000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+007007000094990000994f000094990000994f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000f9900000999000009f900000999000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0000000000010c00000c010000010c00000c01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 55000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 99990000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 55999900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

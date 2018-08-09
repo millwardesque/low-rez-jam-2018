@@ -1,3 +1,4 @@
+anim_spr = require('anim_spr')
 collider = require('collider')
 game_obj = require('game_obj')
 renderer = require('renderer')
@@ -13,6 +14,16 @@ local player = {
 	    p.has_flag = false
 	    p.renderable.draw_order = 2
 	    p.renderable.palette = palette
+
+	    -- Animations
+		local anims = {
+			idle = { 1, },
+			walk = { 1, 2 },
+			flag_idle = { 3 },
+			flag_walk = { 3, 4 },
+		}
+
+		anim_spr.attach(p, 4, anims, "idle", 0)
 
 	    collider.attach(p, 2, 6, 4, 2)
 
@@ -59,6 +70,22 @@ local player = {
 		    elseif self.vel.x > 0 then
 		        self.renderable.flip_x = false
 		    end
+
+		    if self.vel.x != 0 then
+		    	if self.has_flag then
+		        	anim_spr.set_anim(self.anim, 'flag_walk')
+		        else
+		        	anim_spr.set_anim(self.anim, 'walk')
+		        end
+		    else
+		    	if self.has_flag then
+		        	anim_spr.set_anim(self.anim, 'flag_idle')
+		        else
+		        	anim_spr.set_anim(self.anim, 'idle')
+		        end
+		    end
+
+		    anim_spr.update(self.anim)
 		end
 
 	    return p
