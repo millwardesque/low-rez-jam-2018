@@ -150,6 +150,7 @@ function _update()
         -- Enemy flag capture
         if p1.has_flag == false then
             if physics.check_collision_collidable(p1, flag2) then
+                p1.pickup_flag(p1)
                 p1.has_flag = true
                 flag2.renderable.enabled = false
             end
@@ -161,7 +162,7 @@ function _update()
 
         if p2.has_flag == false then
             if physics.check_collision_collidable(p2, flag1) then
-                p2.has_flag = true
+                p2.pickup_flag(p2)
                 flag1.renderable.enabled = false
             end
         elseif p2.has_flag and not p1.has_flag then

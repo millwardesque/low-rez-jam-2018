@@ -92,7 +92,8 @@ local renderer = {
         local i = low - 1
         local temp
         for j = low, high - 1 do
-            if (list[j].renderable.draw_order < pivot.renderable.draw_order) then
+            if (list[j].renderable.draw_order < pivot.renderable.draw_order or
+                (list[j].renderable.draw_order == pivot.renderable.draw_order and list[j].y < pivot.y)) then
                 i += 1
                 temp = list[j]
                 list[j] = list[i]
@@ -100,7 +101,8 @@ local renderer = {
             end
         end
 
-        if (list[high].renderable.draw_order < list[i + 1].renderable.draw_order) then
+        if (list[high].renderable.draw_order < list[i + 1].renderable.draw_order or
+            (list[high].renderable.draw_order == list[i + 1].renderable.draw_order and list[high].y < list[i + 1].y)) then
             temp = list[high]
             list[high] = list[i + 1]
             list[i + 1] = temp
