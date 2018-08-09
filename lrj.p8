@@ -186,11 +186,24 @@ local flag = {
         renderer.attach(f, 16)
         f.renderable.draw_order = 1
 
+        f.start_x = x
+        f.start_y = y
+
         if palette ~= nil then
         	f.renderable.palette = palette
         end
 
 	    collider.attach(f, 0, 0, 8, 8)
+
+	    f.pickup_flag = function(self)
+	    	self.renderable.enabled = false
+		end
+
+	    f.reset_flag = function(self)
+	    	self.x = self.start_x
+	    	self.y = self.start_y
+	    	self.renderable.enabled = true
+    	end
 
 	    return f
 	end
@@ -379,14 +392,20 @@ local player = {
 
 	    collider.attach(p, 2, 5, 4, 3)
 
-	    p.pickup_flag = function(self)
+	    p.pickup_flag = function(self, flag)
 	    	self.has_flag = true
 	    	self.renderable.sprite = 3
+
+	    	self.flag = flag
+	    	self.flag.pickup_flag(self.flag)
 	   	end
 
 	   	p.drop_flag = function(self)
 	   		self.has_flag = false
 	   		self.renderable.sprite = 1
+
+	   		self.flag.reset_flag(self.flag)
+	   		self.flag = nil
 	   	end
 
 	    p.update = function (self)
@@ -514,28 +533,29 @@ function reset_level()
         -- Player 1 stuff
         p1_home_x = 10
         p1_home_y = 10
+
+        home1 = home.mk('home1', p1_home_x, p1_home_y)
+        add(scene, home1)
+
         p1 = player.mk('p1', 0, p1_home_x + 8, p1_home_y + 8, nil)
         add(scene, p1)
 
         flag1 = flag.mk('flag1', p1_home_x + 3, p1_home_y - 3)
         add(scene, flag1)
 
-        home1 = home.mk('home1', p1_home_x, p1_home_y)
-        add(scene, home1)
-
         -- Player 2 stuff
         p2_home_x = 46
         p2_home_y = 46
         p2_palette = {0, 1, 4, 3, 2, 5, 6, 7, 9, 8, 14, 11, 12, 13, 10, 15}
+
+        home2 = home.mk('home2', p2_home_x, p2_home_y, p2_palette)
+        add(scene, home2)
 
         p2 = player.mk('p2', 1, p2_home_x - 8, p2_home_y - 8, p2_palette)
         add(scene, p2)
 
         flag2 = flag.mk('flag2', p2_home_x + 3, p2_home_y - 3, p2_palette)
         add(scene, flag2)
-
-        home2 = home.mk('home2', p2_home_x, p2_home_y, p2_palette)
-        add(scene, home2)
 
         -- Electric posts
         add(scene, post.mk('post1', 28, 28))
@@ -627,9 +647,7 @@ function _update()
         -- Enemy flag capture
         if p1.has_flag == false then
             if physics.check_collision_collidable(p1, flag2) then
-                p1.pickup_flag(p1)
-                p1.has_flag = true
-                flag2.renderable.enabled = false
+                p1.pickup_flag(p1, flag2)
             end
         elseif p1.has_flag and not p2.has_flag then
             if physics.check_collision_collidable(p1, home1) then
@@ -639,8 +657,7 @@ function _update()
 
         if p2.has_flag == false then
             if physics.check_collision_collidable(p2, flag1) then
-                p2.pickup_flag(p2)
-                flag1.renderable.enabled = false
+                p2.pickup_flag(p2, flag1)
             end
         elseif p2.has_flag and not p1.has_flag then
             if physics.check_collision_collidable(p2, home2) then
@@ -654,12 +671,20 @@ function _update()
                     obj.activate(obj)
                     p1.x = 10
                     p1.y = 10
+
+                    if p1.has_flag then
+                        p1.drop_flag(p1)
+                    end
                 end
 
                 if physics.check_collision_collidable(p2, obj) then
                     obj.activate(obj)
                     p2.x = 46
                     p2.y = 46
+
+                    if p2.has_flag then
+                        p2.drop_flag(p2)
+                    end
                 end
             end
         end

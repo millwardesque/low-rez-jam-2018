@@ -8,11 +8,24 @@ local flag = {
         renderer.attach(f, 16)
         f.renderable.draw_order = 1
 
+        f.start_x = x
+        f.start_y = y
+
         if palette ~= nil then
         	f.renderable.palette = palette
         end
 
 	    collider.attach(f, 0, 0, 8, 8)
+
+	    f.pickup_flag = function(self)
+	    	self.renderable.enabled = false
+		end
+
+	    f.reset_flag = function(self)
+	    	self.x = self.start_x
+	    	self.y = self.start_y
+	    	self.renderable.enabled = true
+    	end
 
 	    return f
 	end

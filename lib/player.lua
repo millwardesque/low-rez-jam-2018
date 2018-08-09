@@ -16,14 +16,20 @@ local player = {
 
 	    collider.attach(p, 2, 5, 4, 3)
 
-	    p.pickup_flag = function(self)
+	    p.pickup_flag = function(self, flag)
 	    	self.has_flag = true
 	    	self.renderable.sprite = 3
+
+	    	self.flag = flag
+	    	self.flag.pickup_flag(self.flag)
 	   	end
 
 	   	p.drop_flag = function(self)
 	   		self.has_flag = false
 	   		self.renderable.sprite = 1
+
+	   		self.flag.reset_flag(self.flag)
+	   		self.flag = nil
 	   	end
 
 	    p.update = function (self)
